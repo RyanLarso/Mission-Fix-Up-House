@@ -1487,14 +1487,7 @@ const SMART = [
   });
 
   document.addEventListener("click", (e) => {
-    if (e.target.id === "btn-export") {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `mission-control-${today()}.json`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    }
+    if (e.target.id === "btn-export") exportBackup();
     if (e.target.id === "btn-import") {
       const inp = document.createElement("input");
       inp.type = "file"; inp.accept = "application/json";
@@ -1526,6 +1519,32 @@ const SMART = [
       try { localStorage.setItem("mc-theme", next); } catch (err) {}
     }
   });
+
+  async function exportBackup() {
+    const name = `mission-control-${today()}.json`;
+    const text = JSON.stringify(state, null, 2);
+    const btn = document.getElementById("btn-export");
+    const say = (m) => { if (btn) { btn.textContent = m; setTimeout(() => (btn.textContent = "Export backup"), 2200); } };
+
+    /* Published as an Artifact the page can't hand over a file on its own —
+       the viewer has to be asked. Standalone, the link works fine. */
+    if (window.claude && typeof window.claude.use === "function") {
+      try {
+        const dl = await window.claude.use("downloads");
+        if (dl) {
+          try { await dl.save({ filename: name, data: text }); say("Saved"); }
+          catch (err) { say(err && err.code === "declined" ? "Cancelled" : "Couldn't save"); }
+          return;
+        }
+      } catch (err) { /* fall through to the link */ }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    say("Saved");
+  }
 
   /* ===================== boot ===================== */
   try {

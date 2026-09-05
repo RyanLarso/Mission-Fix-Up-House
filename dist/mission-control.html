@@ -1,0 +1,1580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Control</title>
+<style>html{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Public+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Mission Control — jobsite punch-list, built to be read at arm's length
+   on a kitchen wall tablet. Two hues carry meaning:
+   amber = the finite Mission (sell) · verdigris = the forever Rhythm (maintain) */
+
+/* ---- tokens: complete light palette on bare :root ---- */
+:root {
+  --paper:      #eef1f0;
+  --surface:    #ffffff;
+  --surface-2:  #f6f8f7;
+  --sunk:       #e4e9e8;
+  --line:       #d3dbdb;
+  --line-soft:  #e3e9e8;
+
+  --ink:        #16202b;
+  --ink-2:      #4a5a68;
+  --ink-3:      #788993;
+
+  --amber:      #b4670f;   /* Mission — the finite clock */
+  --amber-soft: #fbf0e2;
+  --teal:       #14655f;   /* Rhythm — the forever clock */
+  --teal-soft:  #e0efed;
+
+  --good:       #2c7a4b;
+  --good-soft:  #e2f0e7;
+  --warn:       #9c6b12;
+  --warn-soft:  #f8eeda;
+  --risk:       #a63428;
+  --risk-soft:  #f8e6e3;
+
+  --shadow:     0 1px 2px rgba(22,32,43,.06), 0 4px 14px rgba(22,32,43,.05);
+  --radius:     4px;
+
+  --f-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --f-body:    "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --f-mono:    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:      #0d1317;
+    --surface:    #151d22;
+    --surface-2:  #1b242a;
+    --sunk:       #101820;
+    --line:       #27343b;
+    --line-soft:  #1f2a31;
+
+    --ink:        #e7edec;
+    --ink-2:      #a4b3b8;
+    --ink-3:      #71838c;
+
+    --amber:      #e39a45;
+    --amber-soft: #2e2216;
+    --teal:       #48b3a8;
+    --teal-soft:  #122a29;
+
+    --good:       #55b47a;
+    --good-soft:  #14271c;
+    --warn:       #d9a83f;
+    --warn-soft:  #29220f;
+    --risk:       #e2705f;
+    --risk-soft:  #2c1715;
+
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper:      #0d1317;  --surface:  #151d22;  --surface-2: #1b242a;
+  --sunk:       #101820;  --line:     #27343b;  --line-soft: #1f2a31;
+  --ink:        #e7edec;  --ink-2:    #a4b3b8;  --ink-3:     #71838c;
+  --amber:      #e39a45;  --amber-soft: #2e2216;
+  --teal:       #48b3a8;  --teal-soft:  #122a29;
+  --good:       #55b47a;  --good-soft:  #14271c;
+  --warn:       #d9a83f;  --warn-soft:  #29220f;
+  --risk:       #e2705f;  --risk-soft:  #2c1715;
+  --shadow:     0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -.015em; }
+p { margin: 0; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 2px; }
+
+/* ---- shell ---- */
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 80px; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-in {
+  max-width: 1120px; margin: 0 auto; padding: 12px 20px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand h1 {
+  font-size: 19px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.brand .sub {
+  font-family: var(--f-mono); font-size: 11px; color: var(--ink-3);
+  letter-spacing: .02em;
+}
+
+.countdown {
+  font-family: var(--f-mono); font-size: 12px;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--amber-soft); color: var(--amber);
+  padding: 5px 11px; border-radius: 100px; white-space: nowrap;
+  font-weight: 600;
+}
+.countdown b { font-size: 14px; font-variant-numeric: tabular-nums; }
+
+.icon-btn {
+  background: none; border: 1px solid var(--line); border-radius: var(--radius);
+  width: 34px; height: 34px; cursor: pointer; color: var(--ink-2);
+  display: grid; place-items: center; font-size: 15px;
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+
+/* ---- tabs ---- */
+.tabs {
+  display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--line); background: var(--surface);
+  position: sticky; top: 58px; z-index: 39;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tabs-in { max-width: 1120px; margin: 0 auto; padding: 0 20px; display: flex; gap: 2px; width: 100%; }
+.tab {
+  background: none; border: 0; border-bottom: 2px solid transparent;
+  padding: 11px 14px; cursor: pointer; white-space: nowrap;
+  font-family: var(--f-display); font-weight: 600; font-size: 13px;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3);
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--amber); }
+.tab .dot {
+  display: inline-block; margin-left: 6px; font-family: var(--f-mono);
+  font-size: 10px; background: var(--sunk); color: var(--ink-2);
+  padding: 1px 5px; border-radius: 100px; letter-spacing: 0;
+}
+
+/* ---- generic blocks ---- */
+.section { margin-top: 28px; }
+.eyebrow {
+  font-family: var(--f-display); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .13em; color: var(--ink-3);
+  margin-bottom: 8px;
+}
+.lede { color: var(--ink-2); max-width: 66ch; }
+.h-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.h-row h2 { font-size: 22px; font-weight: 800; }
+.h-row .meta { font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); margin-left: auto; }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.panel-pad { padding: 18px; }
+
+/* ---- the Floor gauge ---- */
+.floor {
+  background: var(--surface); border: 1px solid var(--line);
+  border-left: 3px solid var(--teal);
+  border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+}
+.floor-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.floor-head h3 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.floor-head .score {
+  margin-left: auto; font-family: var(--f-mono); font-size: 13px;
+  font-variant-numeric: tabular-nums; color: var(--ink-2);
+}
+.floor-note { font-size: 13px; color: var(--ink-2); margin-bottom: 14px; max-width: 62ch; }
+.floor-list { display: grid; gap: 1px; background: var(--line-soft); border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; }
+
+/* ---- task rows ---- */
+.row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px; background: var(--surface);
+  min-height: 52px;
+}
+.row.done { background: var(--surface-2); }
+.check {
+  flex: none; width: 26px; height: 26px; margin-top: 1px;
+  border: 2px solid var(--line); border-radius: 5px;
+  background: var(--surface); cursor: pointer;
+  display: grid; place-items: center; color: transparent;
+  font-size: 14px; font-weight: 700; transition: background .12s, border-color .12s, color .12s;
+}
+.check:hover { border-color: var(--teal); }
+.check[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
+.row-body { min-width: 0; flex: 1; }
+.row-title { font-weight: 600; line-height: 1.35; }
+.row.done .row-title { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 1px; }
+.row-sub { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+.row-why { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; max-width: 68ch; line-height: 1.45; }
+.row-side { flex: none; display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+
+.pill {
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 500;
+  padding: 2px 7px; border-radius: 100px; white-space: nowrap;
+  background: var(--sunk); color: var(--ink-2); letter-spacing: .01em;
+}
+.pill.cats  { background: var(--teal-soft);  color: var(--teal); }
+.pill.flies { background: var(--warn-soft);  color: var(--warn); }
+.pill.due   { background: var(--warn-soft);  color: var(--warn); }
+.pill.late  { background: var(--risk-soft);  color: var(--risk); }
+.pill.ok    { background: var(--good-soft);  color: var(--good); }
+.pill.mission { background: var(--amber-soft); color: var(--amber); }
+
+.who {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  color: #fff; border: 0; letter-spacing: -.02em;
+}
+.who.unset { background: var(--sunk); color: var(--ink-3); border: 1px dashed var(--line); }
+
+/* ---- people strip ---- */
+.people { display: flex; gap: 10px; flex-wrap: wrap; }
+.person {
+  flex: 1 1 150px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px; display: flex; gap: 10px; align-items: center;
+  box-shadow: var(--shadow); min-width: 0;
+}
+.person .av {
+  flex: none; width: 34px; height: 34px; border-radius: 50%; color: #fff;
+  display: grid; place-items: center; font-family: var(--f-mono);
+  font-size: 12px; font-weight: 600;
+}
+.person .nm { font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person .ct { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+
+/* ---- progress ---- */
+.bar { height: 7px; background: var(--sunk); border-radius: 100px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--teal); border-radius: 100px; transition: width .35s ease; }
+.bar.amber > i { background: var(--amber); }
+.bar.good  > i { background: var(--good); }
+
+/* ---- stat strip ---- */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line);
+         border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.stat { background: var(--surface); padding: 14px 16px; }
+.stat .k { font-family: var(--f-display); font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+           letter-spacing: .11em; color: var(--ink-3); }
+.stat .v { font-family: var(--f-mono); font-size: 23px; font-weight: 600; margin-top: 3px;
+           font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.stat .n { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+
+/* ---- phase spine ---- */
+.phase { display: flex; gap: 16px; margin-top: 22px; }
+.spine { flex: none; width: 44px; display: flex; flex-direction: column; align-items: center; }
+.spine .num {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--f-display); font-weight: 800; font-size: 17px;
+  background: var(--sunk); color: var(--ink-2); border: 2px solid var(--line);
+}
+.spine .line { flex: 1; width: 2px; background: var(--line); margin-top: 6px; min-height: 12px; }
+.phase.risk .num { background: var(--risk-soft); color: var(--risk); border-color: var(--risk); }
+.phase.teal .num { background: var(--teal-soft); color: var(--teal); border-color: var(--teal); }
+.phase.warn .num { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+.phase.amber .num { background: var(--amber-soft); color: var(--amber); border-color: var(--amber); }
+.phase.good .num { background: var(--good-soft); color: var(--good); border-color: var(--good); }
+.phase-body { flex: 1; min-width: 0; padding-bottom: 6px; }
+.phase-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.phase-head h3 { font-size: 19px; font-weight: 800; }
+.phase-head .win { font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); }
+.phase-thesis { color: var(--ink-2); font-size: 13.5px; margin: 6px 0 12px; max-width: 68ch; line-height: 1.5; }
+
+.proj-list { display: grid; gap: 1px; background: var(--line-soft);
+             border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; }
+.proj { display: flex; gap: 12px; padding: 12px 14px; background: var(--surface); align-items: flex-start; }
+.proj.done { background: var(--surface-2); }
+.proj-main { flex: 1; min-width: 0; }
+.proj-title { font-weight: 600; line-height: 1.35; }
+.proj.done .proj-title { color: var(--ink-3); text-decoration: line-through; }
+.proj-why { font-size: 12.5px; color: var(--ink-2); margin-top: 5px; max-width: 70ch; line-height: 1.45; }
+.proj-roi { font-family: var(--f-mono); font-size: 11.5px; color: var(--amber); margin-top: 5px; }
+.proj-nums { flex: none; text-align: right; font-family: var(--f-mono); font-size: 12px;
+             font-variant-numeric: tabular-nums; }
+.proj-nums .c { font-weight: 600; }
+.proj-nums .h { color: var(--ink-3); font-size: 11px; }
+
+/* ---- playbook cards ---- */
+.layers { display: grid; gap: 12px; }
+.layer { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--teal);
+         border-radius: var(--radius); padding: 15px 17px; box-shadow: var(--shadow); }
+.layer.flies { border-left-color: var(--warn); }
+.layer .lh { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.layer .lnum { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); letter-spacing: .04em; }
+.layer h4 { font-size: 16px; font-weight: 700; }
+.layer .win { margin-left: auto; font-family: var(--f-mono); font-size: 11px;
+              background: var(--teal-soft); color: var(--teal); padding: 2px 8px; border-radius: 100px; }
+.layer.flies .win { background: var(--warn-soft); color: var(--warn); }
+.layer p { font-size: 13.5px; color: var(--ink-2); line-height: 1.55; max-width: 72ch; }
+.layer.key { border-left-width: 5px; }
+
+/* ---- smart grid ---- */
+.smart-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.gadget { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+          padding: 15px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 7px; }
+.gadget .gh { display: flex; align-items: baseline; gap: 8px; }
+.gadget h4 { font-size: 15px; font-weight: 700; flex: 1; }
+.gadget .cost { font-family: var(--f-mono); font-size: 12px; color: var(--amber); font-weight: 600; white-space: nowrap; }
+.gadget .solves { font-size: 13px; color: var(--ink); font-weight: 600; line-height: 1.4; }
+.gadget p { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+.gadget .gf { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 6px; }
+.diff { display: flex; gap: 3px; }
+.diff i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); display: block; }
+.diff i.on { background: var(--teal); }
+
+/* ---- huddle ---- */
+.huddle-step { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+.huddle-step:last-child { border-bottom: 0; }
+.huddle-step .t { flex: none; font-family: var(--f-mono); font-size: 12px; color: var(--amber);
+                  font-weight: 600; width: 52px; padding-top: 2px; }
+.huddle-step h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.huddle-step p { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; max-width: 68ch; }
+
+/* ---- misc ---- */
+.note {
+  background: var(--surface-2); border: 1px solid var(--line-soft);
+  border-left: 3px solid var(--ink-3); border-radius: var(--radius);
+  padding: 13px 16px; font-size: 13px; color: var(--ink-2); line-height: 1.55; max-width: 74ch;
+}
+.note b { color: var(--ink); }
+.sync {
+  font-family: var(--f-mono); font-size: 11px; padding: 4px 9px; border-radius: 100px;
+  background: var(--sunk); color: var(--ink-3); white-space: nowrap;
+}
+.sync.live { background: var(--good-soft); color: var(--good); }
+
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-family: var(--f-display); font-size: 11px; font-weight: 700;
+               text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); }
+.field input, .field select {
+  font: inherit; font-size: 14px; padding: 8px 10px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.btn {
+  font-family: var(--f-display); font-weight: 700; font-size: 12.5px;
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 9px 15px; border-radius: var(--radius); cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--amber); border-color: var(--amber); color: #fff; }
+.btn.primary:hover { filter: brightness(1.06); }
+
+.empty { padding: 26px 18px; text-align: center; color: var(--ink-3); font-size: 13.5px; }
+
+table.grid { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.grid th {
+  text-align: left; font-family: var(--f-display); font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3);
+  padding: 8px 12px; border-bottom: 1px solid var(--line);
+}
+table.grid td { padding: 10px 12px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+table.grid td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.scroll-x { overflow-x: auto; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 0 14px 60px; }
+  .topbar-in, .tabs-in { padding-left: 14px; padding-right: 14px; }
+  .brand .sub { display: none; }
+  .phase { gap: 12px; }
+  .spine { width: 36px; }
+  .spine .num { width: 36px; height: 36px; font-size: 15px; }
+  .row-why, .proj-why { display: none; }
+  .row-why.show, .proj-why.show { display: block; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+</style>
+
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <h1>Mission Control</h1>
+      <span class="sub">4bd · 3.5ba · 5 people · 3 cats</span>
+    </div>
+    <span class="sync" id="sync">this device</span>
+    <span class="countdown" id="countdown"></span>
+    <button class="icon-btn" id="btn-theme" title="Switch theme" aria-label="Switch theme">◐</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs" role="tablist"></nav>
+
+<main class="wrap" id="main"></main>
+<script>
+/* Mission Control — seed data
+ * Everything here is the *plan*. Mutable state (what's done, what it cost)
+ * lives separately in storage so this file stays editable by hand.
+ *
+ * House profile: 2 stories, 4 bed, 3.5 bath, family of 5, 3 cats,
+ * horse property next door, listing target ~June 2027.
+ */
+
+const HOUSE = {
+  name: "Mission: Fix Up House",
+  stories: 2,
+  beds: 4,
+  baths: 3.5,
+  people: 5,
+  cats: 3,
+  listTarget: "2027-06-15",
+  neighborHorses: true,
+};
+
+/* ---------------------------------------------------------------------------
+ * PEOPLE — rename these in Settings. Capability tiers drive auto-assignment so
+ * a 7-year-old never gets handed the gutters.
+ * ------------------------------------------------------------------------- */
+const PEOPLE = [
+  { id: "p1", name: "Grown-up 1", short: "G1", tier: 3, color: "#c2721a" },
+  { id: "p2", name: "Grown-up 2", short: "G2", tier: 3, color: "#17706b" },
+  { id: "p3", name: "Kid 1",      short: "K1", tier: 2, color: "#3d6ea8" },
+  { id: "p4", name: "Kid 2",      short: "K2", tier: 2, color: "#8a5aa8" },
+  { id: "p5", name: "Kid 3",      short: "K3", tier: 1, color: "#a85a6e" },
+];
+
+/* ---------------------------------------------------------------------------
+ * ZONES — six-week rotation. One zone gets the deep pass each week; everything
+ * else stays on light duty. This is the classic zone-cleaning trick and it is
+ * the only way a 4/3.5 two-story stays ahead of five people and three cats.
+ * ------------------------------------------------------------------------- */
+const ZONES = [
+  { id: "z1", name: "Kitchen & Pantry",        floor: 1, note: "Highest traffic. Cat bowls, fridge coils, under-sink leak check." },
+  { id: "z2", name: "Living & Dining",         floor: 1, note: "Where the cats actually live. Throws, upholstery, baseboards." },
+  { id: "z3", name: "Entry, Stairs & Halls",   floor: 1, note: "Stair treads hold the most hair in the house. Also fly entry point." },
+  { id: "z4", name: "Primary Suite",           floor: 2, note: "Bed + bath. Grout, glass, vent fan." },
+  { id: "z5", name: "Kids' Rooms & Bath",      floor: 2, note: "Three rooms + full bath. Kids do their own; adult inspects." },
+  { id: "z6", name: "Garage, Laundry, Utility", floor: 1, note: "Dryer vent, water heater, filter stock, the junk pile." },
+];
+
+/* ---------------------------------------------------------------------------
+ * THE FLOOR — the Minimum Viable Week.
+ *
+ * This is the single most important list in the app. On a bad week — sick kid,
+ * work crunch, holidays — you do ONLY these five and you have not lost ground.
+ * A system that requires your best week dies on your first bad one.
+ * ------------------------------------------------------------------------- */
+const FLOOR = [
+  { id: "f1", title: "Scoop every litter box",       detail: "All 4 boxes, daily. Non-negotiable — this is the one that becomes a $3,000 problem.", per: "day" },
+  { id: "f2", title: "Robots run + main floor swept", detail: "Push the button if the schedule didn't. Stairs by hand.", per: "day" },
+  { id: "f3", title: "Kitchen reset before bed",      detail: "Counters clear, sink empty, dishwasher running.", per: "day" },
+  { id: "f4", title: "Wash the cat textiles",         detail: "Throws off the couches and cat beds — one load, hot.", per: "week" },
+  { id: "f5", title: "Trash, recycling, 10-min purge", detail: "Bins to the curb, and everyone grabs 5 things that leave the house.", per: "week" },
+];
+
+/* ---------------------------------------------------------------------------
+ * RHYTHM — the recurring maintenance engine.
+ *
+ * cadence: days between repeats, counted from when you LAST DID IT, not from a
+ * fixed calendar. Miss a week and it slides, it does not turn into a red debt.
+ * tier: minimum capability tier — 1 kid-friendly, 2 older kid, 3 adult.
+ * ------------------------------------------------------------------------- */
+const RHYTHM = [
+  // --- Daily / near-daily -------------------------------------------------
+  { id: "r01", title: "Scoop litter boxes", cadence: 1, min: 6, tier: 1, tag: "cats", zone: null, why: "Three cats, four boxes. Odor is the #1 thing that kills a home sale — and it soaks into drywall long before you smell it." },
+  { id: "r02", title: "Run robot vacuums (both floors)", cadence: 1, min: 3, tier: 1, tag: "cats", zone: null, why: "Daily beats deep. Hair you pick up today never gets ground into carpet fiber." },
+  { id: "r03", title: "Kitchen reset", cadence: 1, min: 12, tier: 2, tag: "core", zone: "z1", why: "A clean kitchen at 10pm is the difference between waking up ahead or behind." },
+  { id: "r04", title: "Sweep stairs + entry", cadence: 2, min: 6, tier: 2, tag: "cats", zone: "z3", why: "Stair treads are the single biggest hair reservoir in a two-story house." },
+  { id: "r05", title: "Doors closed sweep", cadence: 1, min: 2, tier: 1, tag: "flies", zone: null, why: "Every door left open is a dozen flies. Make it a named job and it stops being nagging." },
+
+  // --- Weekly -------------------------------------------------------------
+  { id: "r10", title: "Brush all three cats", cadence: 3, min: 15, tier: 1, tag: "cats", zone: null, why: "Source control. An undercoat rake pulls out hair that would otherwise land on every surface you own. Do it on the porch." },
+  { id: "r11", title: "Wash cat throws + beds", cadence: 7, min: 10, tier: 2, tag: "cats", zone: null, why: "Washable throws on the 3 spots cats actually sleep concentrates ~80% of the hair into things you can machine-wash." },
+  { id: "r12", title: "Zone deep pass", cadence: 7, min: 75, tier: 2, tag: "core", zone: "rotating", why: "One zone per week gets the real treatment. Six weeks and the whole house has been done." },
+  { id: "r13", title: "Bathrooms quick pass (all 3.5)", cadence: 7, min: 30, tier: 2, tag: "core", zone: null, why: "Toilets, sinks, mirrors. Not deep — deep happens on that bath's zone week." },
+  { id: "r14", title: "Laundry: all beds", cadence: 7, min: 30, tier: 2, tag: "core", zone: null, why: "Five people. Stripping every bed the same day is faster than five separate loads." },
+  { id: "r15", title: "Wipe litter area + mats", cadence: 7, min: 8, tier: 2, tag: "cats", zone: null, why: "The tracked litter halo is what visitors notice." },
+  { id: "r16", title: "Empty vacuum + clean brushrolls", cadence: 7, min: 8, tier: 2, tag: "cats", zone: null, why: "A hair-choked robot is a robot that quietly stops working. This is the #1 reason people think robot vacuums 'don't work' with pets." },
+  { id: "r17", title: "Mow + edge", cadence: 7, min: 45, tier: 3, tag: "yard", season: "warm", zone: null, why: "Basic lawn care is reported among the highest-return dollars you can spend before a sale." },
+  { id: "r18", title: "Family Huddle (20 min)", cadence: 7, min: 20, tier: 1, tag: "system", zone: null, why: "THE keystone habit. Anchor it to Sunday dinner. Twenty minutes: review the week, pick the zone, claim Mission jobs. Skip this and the whole system dies within a month." },
+
+  // --- Every 2-4 weeks ----------------------------------------------------
+  { id: "r20", title: "Release fly predators", cadence: 24, min: 10, tier: 2, tag: "flies", season: "warm", zone: null, why: "Parasitic wasps that kill fly pupae before they hatch. Harmless to cats, kids and horses. Must be re-released every 3-4 weeks — pest flies breed far faster than the predators do." },
+  { id: "r21", title: "Check + rebait fly traps", cadence: 14, min: 15, tier: 2, tag: "flies", season: "warm", zone: null, why: "Odor traps for house flies, sticky/visual traps for biting stable flies. Hang them AWAY from the house, 4ft up — you are luring flies away, not inviting them over." },
+  { id: "r22", title: "Change HVAC filter", cadence: 30, min: 10, tier: 3, tag: "cats", zone: "z6", why: "With pets, monthly. MERV 11-13 catches pet dander — but confirm your blower can handle 13 before you jump, a too-restrictive filter starves the system." },
+  { id: "r23", title: "Deep vacuum upholstery + curtains", cadence: 21, min: 40, tier: 2, tag: "cats", zone: null, why: "Dander embeds in soft goods. This is where a buyer's allergies get triggered." },
+  { id: "r24", title: "Wipe baseboards + vent covers", cadence: 30, min: 30, tier: 2, tag: "cats", zone: "rotating", why: "Hair collects on horizontal ledges you never look at. Buyers look at them." },
+  { id: "r25", title: "Mission work session", cadence: 7, min: 180, tier: 3, tag: "mission", zone: null, why: "One protected 3-hour block a week. This is how a 12-month project list actually gets finished." },
+
+  // --- Quarterly / seasonal ----------------------------------------------
+  { id: "r30", title: "Test smoke + CO alarms", cadence: 180, min: 20, tier: 3, tag: "safety", zone: null, why: "An inspector will check every one. Cheaper to fix now than as a closing credit." },
+  { id: "r31", title: "Clean gutters + downspouts", cadence: 180, min: 120, tier: 3, tag: "yard", zone: null, why: "Overflowing gutters cause the foundation and siding problems that scare buyers most." },
+  { id: "r32", title: "Clean dryer vent (full run)", cadence: 180, min: 45, tier: 3, tag: "safety", zone: "z6", why: "Pet hair + lint. Genuine fire risk, and a common inspection callout." },
+  { id: "r33", title: "Flush water heater", cadence: 365, min: 60, tier: 3, tag: "safety", zone: "z6", why: "Extends its life and keeps 'aging water heater' off the inspection report." },
+  { id: "r34", title: "HVAC pro service", cadence: 182, min: 90, tier: 3, tag: "safety", zone: null, why: "Two services a year, and KEEP THE RECEIPTS — a documented service history is a real negotiating asset at sale." },
+  { id: "r35", title: "Reseal grout + caulk lines", cadence: 365, min: 120, tier: 3, tag: "core", zone: null, why: "Failed caulk reads as water damage to a buyer even when nothing is wrong." },
+  { id: "r36", title: "Trim shrubs, edge beds", cadence: 45, min: 90, tier: 3, tag: "yard", season: "warm", zone: null, why: "Overgrowth against siding traps moisture and reads as neglect." },
+  { id: "r37", title: "Walk the perimeter: screens, weatherstrip, gaps", cadence: 60, min: 30, tier: 3, tag: "flies", zone: null, why: "Exclusion is the cheapest fly control there is. One torn screen undoes a season of traps." },
+  { id: "r38", title: "Standing water audit", cadence: 30, min: 20, tier: 2, tag: "flies", season: "warm", zone: null, why: "Flies breed in wet organic matter. Hose puddles, gutter sludge, compost, forgotten buckets, the base of the trash cans." },
+];
+
+/* ---------------------------------------------------------------------------
+ * MISSION — the finite 12-month plan to list the house.
+ *
+ * Ordering principle, and it matters more than any individual project:
+ *   Things that DECAY get done last (mulch, paint, lawn, cleaning).
+ *   Things that need LEAD TIME get started first (seed, plantings, permits,
+ *   anything needing three contractor bids).
+ *
+ * On the ROI numbers: these are national averages from cost-vs-value style
+ * reporting and they move year to year and market to market. Use them to RANK
+ * projects, never as a promise. The same reports note that homeowners often
+ * recoup well under 100% in practice. The reliable mechanism for a 12-month
+ * sale is condition and presentation, not renovation.
+ * ------------------------------------------------------------------------- */
+const PHASES = [
+  { n: 0, id: "ph0", name: "Stop the Bleeding",  window: "Weeks 1–4",    hue: "risk",
+    thesis: "Before a single upgrade: stop active damage, and get the weekly rhythm actually running. If the system isn't running, nothing below gets finished." },
+  { n: 1, id: "ph1", name: "Subtract",           window: "Months 1–3",   hue: "teal",
+    thesis: "The highest-return work in the whole plan is free. Remove ~30% of what's in the house. Empty rooms photograph bigger, and every box you move now is one you don't move in a panic later." },
+  { n: 2, id: "ph2", name: "De-risk",            window: "Months 3–7",   hue: "warn",
+    thesis: "Fix what an inspector would flag. This is where the money actually is: an inspection finding becomes a price concession at two to three times what the repair would have cost you." },
+  { n: 3, id: "ph3", name: "The Money Shots",    window: "Months 6–10",  hue: "amber",
+    thesis: "Now — and only now — the visible upgrades. Almost all of the top-returning projects are exterior and modest. Curb appeal is the whole game." },
+  { n: 4, id: "ph4", name: "Stage & List",       window: "Final 8 weeks", hue: "good",
+    thesis: "Everything perishable happens here: mulch, paint touch-up, deep clean, carpet extraction, peak lawn. Do these too early and you pay twice." },
+];
+
+/* cost = your estimated spend, value = rough resale impact, roi = reported band
+ * decays = must be done close to listing; lead = weeks of lead time needed */
+const PROJECTS = [
+  // ---- Phase 0 : Stop the Bleeding ---------------------------------------
+  { id: "m001", ph: "ph0", title: "Leak sensors under every sink, water heater, washer", cost: 90, value: 0, hrs: 2, cat: "smart", why: "Ten dollars a sensor against a five-figure water-damage claim in the middle of your sale year. Best risk-adjusted dollar in this whole document." },
+  { id: "m002", ph: "ph0", title: "Fresh HVAC filter + set a monthly reminder", cost: 20, value: 0, hrs: 1, cat: "repair", why: "Three cats. Monthly, MERV 11–13, verified against what your blower can take." },
+  { id: "m003", ph: "ph0", title: "Clear gutters + check downspout discharge", cost: 0, value: 400, hrs: 4, cat: "repair", why: "Water against the foundation is the most expensive problem you can grow by ignoring." },
+  { id: "m004", ph: "ph0", title: "Walk the roof with binoculars, photograph everything", cost: 0, value: 0, hrs: 1, cat: "repair", why: "You need to know now whether there's a roof problem. A roof surprise in month 11 is a catastrophe; in month 1 it's a plan." },
+  { id: "m005", ph: "ph0", title: "Fix every dripping faucet and running toilet", cost: 60, value: 300, hrs: 3, cat: "repair", why: "Trivial to fix, and each one is a line item on an inspection report." },
+  { id: "m006", ph: "ph0", title: "Stand up the Rhythm system — 4 weeks unbroken", cost: 0, value: 0, hrs: 0, cat: "system", why: "This is a real project with a real deliverable: four consecutive weeks of hitting the Floor. Do not start Phase 1 until this is done." },
+  { id: "m007", ph: "ph0", title: "Order fly predators + set the release schedule", cost: 180, value: 0, hrs: 1, cat: "flies", why: "Start before daytime temps consistently hit 60°F. Getting ahead of the first hatch is worth more than everything you do after it." },
+  { id: "m008", ph: "ph0", title: "Pre-inspection: hire your own inspector", cost: 450, value: 3000, hrs: 4, cat: "repair", why: "The single smartest $450 in the plan. You get the buyer's list a year early, at your own pace, with no negotiating leverage attached to it." },
+
+  // ---- Phase 1 : Subtract -------------------------------------------------
+  { id: "m101", ph: "ph1", title: "Declutter: garage", cost: 0, value: 2000, hrs: 20, cat: "declutter", why: "Buyers need to see that a car fits. A packed garage reads as 'this house has no storage'." },
+  { id: "m102", ph: "ph1", title: "Declutter: all closets to 70% full", cost: 0, value: 1500, hrs: 12, cat: "declutter", why: "A stuffed closet says the house is too small. Same closet at 70% says it's generous." },
+  { id: "m103", ph: "ph1", title: "Declutter: kids' rooms (with the kids)", cost: 0, value: 800, hrs: 10, cat: "declutter", why: "Do it with them, not to them. Three rooms, one weekend each." },
+  { id: "m104", ph: "ph1", title: "Rent a storage unit for 6 months", cost: 700, value: 3000, hrs: 8, cat: "declutter", why: "Cheaper than any renovation on this list and it makes every room look bigger. Counterintuitive but this outperforms most upgrades per dollar." },
+  { id: "m105", ph: "ph1", title: "Depersonalize: photos, collections, fridge", cost: 0, value: 500, hrs: 4, cat: "declutter", why: "Buyers need to picture themselves living there. Save it for the last month if it's painful." },
+  { id: "m106", ph: "ph1", title: "Audit the cat infrastructure — what stays, what hides", cost: 150, value: 1500, hrs: 4, cat: "cats", why: "Trees, towers, scratchers, bowls, boxes. Decide now which are staying for showings and which get consolidated. Buyers should not be able to count your cats." },
+  { id: "m107", ph: "ph1", title: "Haul-away day: dump run + donation run", cost: 250, value: 0, hrs: 8, cat: "declutter", why: "Book the trailer. Momentum matters more than sorting perfectly." },
+
+  // ---- Phase 2 : De-risk --------------------------------------------------
+  { id: "m201", ph: "ph2", title: "Work the pre-inspection list, top to bottom", cost: 1500, value: 5000, hrs: 40, cat: "repair", why: "Every item you fix now is one that doesn't become a concession demand later." },
+  { id: "m202", ph: "ph2", title: "GFCI outlets in all wet locations", cost: 200, value: 600, hrs: 4, cat: "repair", why: "Kitchen, 3.5 baths, garage, exterior. Guaranteed inspection callout, cheap to fix." },
+  { id: "m203", ph: "ph2", title: "Regrade soil away from foundation", cost: 300, value: 2500, hrs: 16, cat: "repair", why: "Negative grading scares buyers more than almost anything else. Dirt is cheap." },
+  { id: "m204", ph: "ph2", title: "Service HVAC, start the paper trail", cost: 350, value: 1500, hrs: 3, cat: "repair", why: "A folder of service records at showing time is worth real money." },
+  { id: "m205", ph: "ph2", title: "Reglaze / regrout tubs and showers", cost: 400, value: 1800, hrs: 20, cat: "repair", why: "3.5 baths. Tired grout reads as water damage; fresh grout reads as a maintained house." },
+  { id: "m206", ph: "ph2", title: "Repair drywall, patch every hole", cost: 150, value: 900, hrs: 16, cat: "repair", why: "Five people and three cats leave marks. Patch now, paint in Phase 4." },
+  { id: "m207", ph: "ph2", title: "Fix every door: latches, squeaks, sticking", cost: 80, value: 700, hrs: 8, cat: "repair", why: "Buyers touch every door. A sticking door is a tiny, constant signal of neglect." },
+  { id: "m208", ph: "ph2", title: "Address any cat-damaged surfaces", cost: 400, value: 2200, hrs: 12, cat: "cats", why: "Scratched door frames, clawed carpet edges, damaged screens. Find them all now — you've stopped seeing them." },
+  { id: "m209", ph: "ph2", title: "Seal the house against flies", cost: 250, value: 300, hrs: 12, cat: "flies", why: "Re-screen torn windows, weatherstrip all exterior doors, add door sweeps. Pays off daily until you leave, and it's a real quality-of-life upgrade." },
+  { id: "m210", ph: "ph2", title: "Talk to the horse neighbors", cost: 0, value: 0, hrs: 1, cat: "flies", why: "Manure management at the source is the single biggest lever on fly population and it isn't on your property. Offer to split the cost of fly predators — it's cheap, it's neighborly, and it works far better than anything you can do alone." },
+
+  // ---- Phase 3 : The Money Shots -----------------------------------------
+  { id: "m301", ph: "ph3", title: "Replace the garage door", cost: 4500, value: 8000, hrs: 8, cat: "curb", roi: "Consistently the #1 ranked project, reported 190–270%", why: "Biggest single visual mass on most facades. It reads instantly." },
+  { id: "m302", ph: "ph3", title: "Replace the front entry door (steel)", cost: 2200, value: 4000, hrs: 6, cat: "curb", roi: "Reported ~190–215%", why: "Where every buyer stands while the agent works the lockbox. They will study it." },
+  { id: "m303", ph: "ph3", title: "Pressure wash everything", cost: 120, value: 2000, hrs: 10, cat: "curb", why: "Siding, walks, drive, fence, deck. Rent the machine. Dollar for dollar this is the most dramatic thing on the entire list." },
+  { id: "m304", ph: "ph3", title: "Paint the front door + shutters", cost: 90, value: 1200, hrs: 6, cat: "curb", why: "One quart of paint. Pick the color against the roof, not against Pinterest." },
+  { id: "m305", ph: "ph3", title: "New house numbers, mailbox, porch light, kick plate", cost: 300, value: 1500, hrs: 4, cat: "curb", why: "Cheap jewelry for the front of the house. Buy all four in one finish." },
+  { id: "m306", ph: "ph3", title: "Stone veneer accent on the front elevation", cost: 3200, value: 5500, hrs: 30, cat: "curb", roi: "Reported ~200%+", why: "Only if your facade is flat and boring. Skip it if the front already has texture or interest." },
+  { id: "m307", ph: "ph3", title: "Minor kitchen refresh — hardware, paint, fixture", cost: 1400, value: 2600, hrs: 30, cat: "interior", roi: "Minor remodel reported ~95–115%; full remodels return far less", why: "Cabinet paint, new pulls, one good faucet, updated light. Do NOT gut this kitchen — major remodels are near the bottom of every return ranking." },
+  { id: "m308", ph: "ph3", title: "Update lighting + all switch plates", cost: 600, value: 1400, hrs: 12, cat: "interior", why: "Dated fixtures date the whole house. Matched warm bulbs at 2700K in every room — mismatched color temperature is the most common thing that makes listing photos look bad." },
+  { id: "m309", ph: "ph3", title: "Reseed / patch the lawn", cost: 200, value: 1500, hrs: 8, cat: "yard", lead: 10, why: "LEAD TIME: grass needs a full season to fill in. Seed now for a lawn that peaks at listing." },
+  { id: "m310", ph: "ph3", title: "Define bed edges, plant perennials", cost: 500, value: 2000, hrs: 20, cat: "yard", lead: 12, why: "A crisp cut edge does more than expensive plants. Plants need time to look established." },
+  { id: "m311", ph: "ph3", title: "Trim trees off the roof and siding", cost: 600, value: 1200, hrs: 6, cat: "yard", why: "Branch contact is both an inspection item and a squirrel-and-roof problem." },
+  { id: "m312", ph: "ph3", title: "Low-voltage path + facade lighting", cost: 350, value: 700, hrs: 8, cat: "curb", roi: "Reported ~60% — do it for evening showings, not for the return", why: "The honest one on this list: it doesn't pay back on paper, but it makes twilight photos and evening showings dramatically better." },
+
+  // ---- Phase 4 : Stage & List --------------------------------------------
+  { id: "m401", ph: "ph4", title: "Interior paint, neutral, every room", cost: 1800, value: 3500, hrs: 60, cat: "interior", roi: "Reported ~105%+ when the work is genuinely clean", decays: true, why: "The highest-impact interior dollar. Clean edges matter more than color — a sloppy line reads worse than dated paint." },
+  { id: "m402", ph: "ph4", title: "Professional carpet + upholstery extraction", cost: 550, value: 2500, hrs: 4, cat: "cats", decays: true, why: "Hot-water extraction with an enzyme treatment, not a rental machine. This is where three cats' worth of evidence lives." },
+  { id: "m403", ph: "ph4", title: "HVAC duct cleaning + new filter", cost: 450, value: 1200, hrs: 4, cat: "cats", decays: true, why: "Pet allergens settle into ductwork and then get redistributed into every room every time the system runs." },
+  { id: "m404", ph: "ph4", title: "The Nose Test — bring in someone with no pets", cost: 0, value: 3000, hrs: 1, cat: "cats", decays: true, why: "You are nose-blind to your own house. This is not optional. Ask a friend who doesn't own animals to walk through and be brutally honest. Odor is the number one deal-killer for pet households." },
+  { id: "m405", ph: "ph4", title: "Fresh mulch in every bed", cost: 350, value: 1800, hrs: 10, cat: "yard", decays: true, roi: "Basic lawn care and mulch report among the highest returns per dollar in landscaping", decaysNote: "Fades in ~8 weeks", why: "Do this 1–2 weeks before photos. Not a day earlier." },
+  { id: "m406", ph: "ph4", title: "Deep clean: windows inside and out", cost: 250, value: 1200, hrs: 12, cat: "clean", decays: true, why: "Clean glass changes how bright every listing photo looks." },
+  { id: "m407", ph: "ph4", title: "Whole-house deep clean (hire it out)", cost: 600, value: 2000, hrs: 2, cat: "clean", decays: true, why: "Do not do this one yourself. You've been living in it; you will miss things a stranger won't." },
+  { id: "m408", ph: "ph4", title: "Cat relocation plan for showings", cost: 0, value: 2000, hrs: 2, cat: "cats", why: "Cats and all their gear off the property for every showing. Have the crates, the destination and the 30-minute drill worked out in advance — you will get same-day showing requests." },
+  { id: "m409", ph: "ph4", title: "Stage: rent or borrow what's missing", cost: 900, value: 4000, hrs: 12, cat: "clean", decays: true, why: "You've removed 30% of your stuff. Some rooms will now read as empty rather than spacious." },
+  { id: "m410", ph: "ph4", title: "Professional photos (+ twilight set)", cost: 400, value: 5000, hrs: 4, cat: "clean", decays: true, why: "The listing photo is the only thing most buyers ever see. Never let an agent shoot it on a phone." },
+];
+
+/* ---------------------------------------------------------------------------
+ * CATS — three cats, two floors. Layered defense, ordered by leverage.
+ * ------------------------------------------------------------------------- */
+const CAT_PLAN = [
+  { layer: "1. Source",   title: "Brush before it sheds",
+    detail: "Undercoat rake or deshedding tool, 5 minutes per cat, 3× a week, done on the porch. This is the highest-leverage thing on the list — hair caught here never has to be cleaned up anywhere else. Add an omega-3 supplement; a sudden increase in shedding is worth a vet conversation, since it can signal stress or a health issue.",
+    win: "Cuts loose hair at the source" },
+  { layer: "2. Capture",  title: "Give the hair somewhere to land",
+    detail: "Washable throws on the three spots the cats actually sleep, plus washable covers on cat beds. This concentrates the large majority of shed hair onto objects you can put in a washing machine. Wash weekly, hot. Cheapest, least glamorous, most effective intervention available.",
+    win: "Turns a cleaning problem into a laundry problem" },
+  { layer: "3. Floors",   title: "Daily robots, weekly deep",
+    detail: "One robot per floor — carrying one up and down stairs means it stops happening by week three. Choose anti-tangle rubber brushrolls over bristles. Empty the bin and cut hair off the rollers weekly, or it quietly stops picking anything up. Stairs are hand-work; nothing automates stairs well.",
+    win: "Hair never gets ground into fiber" },
+  { layer: "4. Air",      title: "Filter what's airborne",
+    detail: "HEPA purifiers sized for 4–5 air changes per hour in the rooms where cats spend time, plus one near the litter area. On the HVAC side: MERV 11–13 pleated filter, changed monthly with pets — but check your blower can handle 13 first, and make sure the filter actually seals in its slot. Gaps let air bypass the media entirely.",
+    win: "Handles dander, which is the allergy trigger" },
+  { layer: "5. Litter",   title: "Four boxes, three cats",
+    detail: "The n+1 rule. Large uncovered boxes, a real trapping mat under each, scooped daily and fully changed weekly. Put a purifier near the box cluster. This layer is about odor, and odor is the layer that decides your sale.",
+    win: "Kills the #1 deal-breaker at the source" },
+  { layer: "6. Evidence", title: "The pre-listing reset",
+    detail: "Six to eight weeks before listing: professional hot-water extraction with enzyme treatment on carpet and upholstery, duct cleaning, fresh filters, and replace the textiles too far gone to save. Then the Nose Test — a friend with no pets, walking through, being honest. Never use candles or air fresheners to cover: buyers read a masked smell as something being hidden, which is worse than the smell.",
+    win: "Removes what a buyer's nose is looking for" },
+];
+
+/* ---------------------------------------------------------------------------
+ * FLIES — living next to horses.
+ *
+ * The hard constraint: the manure is not on your property. Source control is
+ * the single biggest lever in fly management and you don't own it. So the
+ * strategy is interception, exclusion, and a good relationship with a neighbor.
+ * ------------------------------------------------------------------------- */
+const FLY_PLAN = [
+  { when: "Late winter", title: "Start before you see a single fly",
+    detail: "Begin control before daytime temperatures consistently reach 60°F. Fly development accelerates hard past that line, and everything is easier before the first generation hatches than after.", key: true },
+  { when: "Early spring", title: "First fly predator release",
+    detail: "Parasitic wasps that lay eggs in fly pupae, killing them before they hatch. Harmless to cats, kids, horses and bees — they don't sting or bite. Quantity is keyed to the number of large animals nearby, roughly 500–1,000 per horse, which means your effective dose depends on the neighbor's herd, not your house." },
+  { when: "Every 3–4 weeks, warm months", title: "Re-release, without fail",
+    detail: "This is where most people fail. Pest flies reproduce roughly nine times faster than the predators do, so a single release is nearly worthless — the schedule IS the treatment. Put it in the app and never skip it." },
+  { when: "Spring through fall", title: "Trap placement, done right",
+    detail: "Odor-baited traps for house flies, sticky and visual traps for biting stable flies. Hang them AWAY from the house and patio, at least 4 feet up, spaced 50–100 feet apart along the property line nearest the horses. The entire point is to pull flies away from where you live — a stink trap by the back door is worse than no trap." },
+  { when: "Ongoing", title: "Exclusion — your cheapest win",
+    detail: "Intact screens on every window, weatherstripping and sweeps on every exterior door, and a household rule about doors. Add a box fan or ceiling fan on the patio: flies are weak fliers and moving air keeps them off you without a single chemical." },
+  { when: "Monthly, warm months", title: "Kill your own breeding sites",
+    detail: "You can't manage the neighbor's manure but you can eliminate every wet organic site on your side: gutter sludge, hose puddles, the base of the trash cans, compost, pet waste, forgotten buckets. A surprising share of 'their' flies are actually yours." },
+  { when: "Once, early", title: "The neighbor conversation",
+    detail: "Worth more than everything above combined. Manure management, dragging pastures, and predator releases at the source are what actually collapse a fly population. Offer to split the cost of predators for their property — it's inexpensive, it's genuinely neighborly, and it treats the problem where it's being made.", key: true },
+];
+
+/* ---------------------------------------------------------------------------
+ * SMART — DIY, local-first, and deliberately PORTABLE.
+ *
+ * You're selling. Buy things you can unplug and take with you. Avoid anything
+ * hardwired or proprietary-cloud that becomes a fixture — and be honest that
+ * smart home gear rarely shows up in an appraisal. Its value here is that it
+ * automates the maintenance system and prevents disasters.
+ * ------------------------------------------------------------------------- */
+const SMART = [
+  { id: "s1", tier: "Foundation", title: "Home Assistant box", cost: "$100–180", diff: 2,
+    solves: "Everything below talks to this. Local, no subscription, no cloud account.",
+    detail: "Home Assistant Green, or HA OS on a mini PC or Raspberry Pi you already have. Add a Zigbee coordinator stick (~$30) and you can run dozens of cheap battery sensors on your own network. All of it comes with you when you move." },
+  { id: "s2", tier: "Foundation", title: "Kitchen wall tablet", cost: "$80–150", diff: 1,
+    solves: "The system that sticks needs to be visible without anyone opening an app.",
+    detail: "Any cheap tablet, wall-mounted or on a stand where the family already gathers, running this dashboard full-screen. The single most important piece of hardware here. A chore system living on one parent's phone makes that parent the manager — and managing is more work than doing." },
+  { id: "s3", tier: "Cat hair", title: "Two robot vacuums", cost: "$250–600", diff: 1,
+    solves: "Daily floor hair on both stories.",
+    detail: "One per floor. Rubber anti-tangle brushroll, not bristles. Schedule them for mid-morning when the house is empty. In HA you can make them run automatically on a 'nobody home' trigger and skip when someone's asleep." },
+  { id: "s4", tier: "Cat hair", title: "PM2.5 air quality sensor", cost: "$35", diff: 3,
+    solves: "Makes the invisible visible — and motivation follows measurement.",
+    detail: "An ESP32 plus a PMS5003 particulate sensor, flashed with ESPHome (YAML config, no C++). Graph it in HA. Watch the spike when someone brushes a cat indoors, or when the robot runs. Auto-trigger the air purifiers above a threshold. Roughly $35 and an afternoon." },
+  { id: "s5", tier: "Flies", title: "Door contact sensors", cost: "$60", diff: 1,
+    solves: "Flies come in through held-open doors. Every time.",
+    detail: "Zigbee contact sensors (~$12 each) on the doors to the yard. Automation: if a door is open more than 60 seconds, announce it on the nearest speaker. Non-nagging, instantly effective, and it trains the kids without a parent having to say anything." },
+  { id: "s6", tier: "Disaster", title: "Water leak sensors", cost: "$90", diff: 1,
+    solves: "A burst supply line during your sale year.",
+    detail: "Under every sink, behind both toilets on the main level, under the water heater, behind the washer. Ten to fifteen dollars each. Push alert to every phone. The cheapest insurance in this entire document." },
+  { id: "s7", tier: "Cats", title: "Litter box counter", cost: "$36", diff: 2,
+    solves: "Scoop reminders that fire on use, not on a fixed schedule — plus early warning on cat health.",
+    detail: "A motion sensor per box, counted in HA. Tells you when boxes actually need attention. The real payoff is health: a sharp change in one cat's visit frequency is an early urinary-issue signal, and urinary issues are exactly how a house ends up with a permanent odor problem." },
+  { id: "s8", tier: "Comfort", title: "Smart thermostat + filter tracking", cost: "$130", diff: 1,
+    solves: "Filter reminders based on actual runtime hours, not the calendar.",
+    detail: "Track blower hours in HA and have it tell you when the filter is genuinely spent. With three cats that will be sooner than the box claims." },
+  { id: "s9", tier: "Selling", title: "Exterior lights on schedule", cost: "$50", diff: 1,
+    solves: "Evening showings and empty-house security.",
+    detail: "Smart bulbs or a smart plug on path lighting, on an astronomical-sunset schedule. A lit house at a 6pm winter showing photographs and feels completely different from a dark one." },
+  { id: "s10", tier: "System", title: "The Huddle reminder", cost: "$0", diff: 1,
+    solves: "The keystone habit — the one that keeps every other habit alive.",
+    detail: "A single weekly automation: at Sunday dinner time, the tablet flips to the Huddle screen and the speakers announce it. One notification, one time a week. Do not add more notifications than this — a system that nags gets ignored, then gets turned off." },
+];
+
+
+/* Mission Control — app logic
+ * Design rules encoded here, in order of importance:
+ *  1. Due dates ROLL from when you last did a thing, never from a fixed
+ *     calendar. Missing a week slides the schedule; it never creates a debt
+ *     pile, because a wall of red is how these systems die.
+ *  2. Assignment is computed, not decided by a person. Nobody has to nag.
+ *  3. Streaks measure weeks at 70%+, not perfect days. Designed to survive a
+ *     bad week, because there will be bad weeks.
+ */
+(function () {
+  "use strict";
+
+  /* ===================== dates ===================== */
+  const DAY = 86400000;
+  const iso = (d) => {
+    const x = new Date(d);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  };
+  const today = () => iso(new Date());
+  const parse = (s) => { const [y, m, d] = String(s).split("-").map(Number); return new Date(y, m - 1, d); };
+  const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / DAY);
+  const addDays = (s, n) => iso(new Date(parse(s).getTime() + n * DAY));
+  /* Monday-anchored week id, so a week doesn't roll over mid-weekend */
+  const weekId = (s) => {
+    const d = parse(s), dow = (d.getDay() + 6) % 7;
+    return iso(new Date(d.getTime() - dow * DAY));
+  };
+  const fmtMoney = (n) =>
+    n >= 1000 ? "$" + (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + "k" : "$" + Math.round(n);
+
+  /* ===================== state ===================== */
+  const BLANK = () => ({
+    settings: {
+      listTarget: HOUSE.listTarget,
+      zoneStart: weekId(today()),
+      huddleDay: 0, // Sunday
+      houseName: HOUSE.name,
+    },
+    people: JSON.parse(JSON.stringify(PEOPLE)),
+    tasks: {},     // id -> {lastDone, prevDone, assignee}
+    projects: {},  // id -> {status, cost, note}
+    log: [],       // {t, p, d} capped
+  });
+
+  let state = BLANK();
+  let store = null;          // storage adapter
+  let view = "today";
+  let expanded = {};         // row id -> bool (mobile "why" toggles)
+
+  const LS_KEY = "mission-control-v1";
+
+  /* -- storage adapter: localStorage baseline, shared db when granted ------ */
+  const LocalStore = {
+    kind: "local",
+    async init() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) state = Object.assign(BLANK(), JSON.parse(raw));
+      } catch (e) { /* private mode, corrupted value: start clean */ }
+    },
+    async push() {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+      catch (e) { /* quota or blocked storage — the session still works */ }
+    },
+    watch() {},
+  };
+
+  function DbStore(db) {
+    const DOCS = {
+      settings: db.doc("house/settings"),
+      people:   db.doc("house/people"),
+      tasks:    db.doc("house/tasks"),
+      projects: db.doc("house/projects"),
+      log:      db.doc("house/log"),
+    };
+    /* Split across documents so two people checking things off at the same
+       time don't clobber each other. Writes are last-writer-wins, so the
+       smaller the document, the smaller the collision surface. */
+    return {
+      kind: "shared",
+      async init() {
+        await LocalStore.init(); // instant paint from cache, then reconcile
+        const snaps = await Promise.all(
+          Object.values(DOCS).map((d) => d.get().catch(() => null))
+        );
+        const keys = Object.keys(DOCS);
+        let any = false;
+        snaps.forEach((s, i) => {
+          if (s && s.exists) {
+            const body = s.data() || {};
+            const k = keys[i];
+            if (k === "people") state.people = body.list || state.people;
+            else if (k === "log") state.log = body.entries || [];
+            else state[k] = Object.assign(state[k] || {}, body);
+            any = true;
+          }
+        });
+        if (!any) await this.push(); // first run seeds the shared store
+      },
+      async push(only) {
+        const jobs = [];
+        const want = only || ["settings", "people", "tasks", "projects", "log"];
+        if (want.includes("settings")) jobs.push(DOCS.settings.set(state.settings));
+        if (want.includes("people"))   jobs.push(DOCS.people.set({ list: state.people }));
+        if (want.includes("tasks"))    jobs.push(DOCS.tasks.set(state.tasks));
+        if (want.includes("projects")) jobs.push(DOCS.projects.set(state.projects));
+        if (want.includes("log"))      jobs.push(DOCS.log.set({ entries: state.log.slice(-1200) }));
+        LocalStore.push();
+        await Promise.all(jobs.map((p) => p.catch(() => {})));
+      },
+      watch() {
+        const bind = (key, ref, apply) =>
+          ref.onSnapshot((s) => {
+            if (!s.exists || s.metadata.hasPendingWrites) return;
+            apply(s.data() || {});
+            LocalStore.push();
+            render();
+          }, () => {});
+        bind("settings", DOCS.settings, (b) => { state.settings = Object.assign(state.settings, b); });
+        bind("people",   DOCS.people,   (b) => { if (b.list) state.people = b.list; });
+        bind("tasks",    DOCS.tasks,    (b) => { state.tasks = b; });
+        bind("projects", DOCS.projects, (b) => { state.projects = b; });
+        bind("log",      DOCS.log,      (b) => { state.log = b.entries || []; });
+      },
+    };
+  }
+
+  let pushTimer = null;
+  function save(scope) {
+    /* Debounced: five people tapping through a Sunday huddle shouldn't
+       generate fifty writes. */
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => store && store.push(scope), 250);
+    LocalStore.push();
+  }
+
+  /* ===================== derived ===================== */
+  const RIDX = {};
+  RHYTHM.forEach((t, i) => { RIDX[t.id] = i; });
+
+  const ts = (id) => (state.tasks[id] = state.tasks[id] || {});
+  const ps = (id) => (state.projects[id] = state.projects[id] || { status: "todo" });
+
+  function taskStatus(t) {
+    const st = ts(t.id);
+    if (!st.lastDone) return { code: "new", days: 0, label: "not started" };
+    const since = daysBetween(st.lastDone, today());
+    const over = since - t.cadence;
+    if (over < 0) return { code: "ok", days: -over, label: `due in ${-over}d` };
+    if (over === 0) return { code: "due", days: 0, label: "due today" };
+    return { code: over > t.cadence ? "late" : "due", days: over, label: `${over}d over` };
+  }
+
+  const isDue = (t) => {
+    const s = taskStatus(t);
+    return s.code === "new" || s.code === "due" || s.code === "late";
+  };
+
+  function currentZone() {
+    const wk = Math.max(0, Math.round((parse(weekId(today())) - parse(state.settings.zoneStart)) / (7 * DAY)));
+    return ZONES[wk % ZONES.length];
+  }
+
+  function eligible(t) {
+    const tier = t.tier || 1;
+    const list = state.people.filter((p) => (p.tier || 1) >= tier);
+    return list.length ? list : state.people;
+  }
+
+  /* Deterministic weekly rotation — no stored assignment, no arguments about
+     whose turn it is. The app decides; that is the whole point. */
+  function assignedTo(t) {
+    const manual = ts(t.id).assignee;
+    if (manual) {
+      const p = state.people.find((x) => x.id === manual);
+      if (p) return p;
+    }
+    const pool = eligible(t);
+    const wk = Math.round(parse(weekId(today())).getTime() / (7 * DAY));
+    return pool[(wk + (RIDX[t.id] || 0)) % pool.length];
+  }
+
+  function logDone(taskId, personId) {
+    state.log.push({ t: taskId, p: personId || null, d: today() });
+    if (state.log.length > 1200) state.log = state.log.slice(-1200);
+  }
+
+  /* ---- the Floor: done-ness, weekly score, forgiving streak ---- */
+  function floorDone(f) {
+    const period = f.per === "day" ? today() : weekId(today());
+    return state.log.some((e) =>
+      e.t === f.id && (f.per === "day" ? e.d === period : weekId(e.d) === period)
+    );
+  }
+  const FLOOR_TARGET = FLOOR.reduce((n, f) => n + (f.per === "day" ? 7 : 1), 0);
+
+  function weekScore(wid) {
+    let hit = 0;
+    for (const f of FLOOR) {
+      const days = new Set(
+        state.log.filter((e) => e.t === f.id && weekId(e.d) === wid).map((e) => e.d)
+      );
+      hit += f.per === "day" ? Math.min(days.size, 7) : Math.min(days.size, 1);
+    }
+    return hit / FLOOR_TARGET;
+  }
+
+  function streak() {
+    /* Counts BACK from last week, so the week in progress never breaks it. */
+    let n = 0, wid = weekId(addDays(today(), -7));
+    while (n < 104) {
+      if (weekScore(wid) >= 0.7) { n++; wid = weekId(addDays(wid, -7)); }
+      else break;
+    }
+    return n;
+  }
+
+  const daysToList = () => Math.max(0, daysBetween(today(), state.settings.listTarget));
+
+  function missionStats() {
+    let done = 0, spent = 0, budget = 0, value = 0, hrs = 0, left = 0;
+    for (const p of PROJECTS) {
+      const st = ps(p.id);
+      const cost = st.cost != null ? st.cost : p.cost;
+      budget += cost;
+      if (st.status === "done") { done++; spent += cost; value += p.value || 0; }
+      else { hrs += p.hrs || 0; left++; }
+    }
+    return { done, total: PROJECTS.length, spent, budget, value, hrs, left };
+  }
+
+  /* ===================== rendering ===================== */
+  const el = (h) => { const d = document.createElement("div"); d.innerHTML = h.trim(); return d.firstElementChild; };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function avatar(p, cls) {
+    if (!p) return `<button class="who unset" data-act="cycle" title="Assign">?</button>`;
+    return `<button class="${cls || "who"}" style="background:${esc(p.color)}" title="${esc(p.name)}" data-act="cycle">${esc(p.short)}</button>`;
+  }
+
+  function taskRow(t, opts) {
+    const st = taskStatus(t), who = assignedTo(t), done = st.code === "ok";
+    const zone = t.zone === "rotating" ? currentZone().name : null;
+    const pillCls = st.code === "late" ? "late" : st.code === "ok" ? "ok" : "due";
+    return `
+      <div class="row ${done ? "done" : ""}" data-task="${t.id}">
+        <button class="check" aria-pressed="${done}" data-act="toggle" aria-label="Mark ${esc(t.title)} done">✓</button>
+        <div class="row-body">
+          <div class="row-title">${esc(t.title)}${zone ? ` <span style="color:var(--teal)">— ${esc(zone)}</span>` : ""}</div>
+          <div class="row-sub">
+            <span class="pill ${t.tag === "cats" || t.tag === "flies" ? t.tag : ""}">${esc(t.tag)}</span>
+            <span style="margin-left:6px">every ${t.cadence}d · ${t.min} min</span>
+            ${opts && opts.hideStatus ? "" : ` · <span class="pill ${pillCls}">${esc(st.label)}</span>`}
+          </div>
+          ${t.why ? `<div class="row-why ${expanded[t.id] ? "show" : ""}" data-act="why">${esc(t.why)}</div>` : ""}
+        </div>
+        <div class="row-side">${avatar(who)}</div>
+      </div>`;
+  }
+
+  /* ---------- TODAY ---------- */
+  function viewToday() {
+    const due = RHYTHM.filter(isDue);
+    const zone = currentZone();
+    const sc = weekScore(weekId(today())), str = streak();
+    const perPerson = {};
+    due.forEach((t, i) => {
+      const p = assignedTo(t);
+      if (p) perPerson[p.id] = (perPerson[p.id] || 0) + t.min;
+    });
+
+    return `
+      <div class="section">
+        <div class="floor">
+          <div class="floor-head">
+            <h3>The Floor</h3>
+            <span class="pill ${sc >= 0.7 ? "ok" : "due"}">${Math.round(sc * 100)}% this week</span>
+            <span class="score">${str} week${str === 1 ? "" : "s"} held</span>
+          </div>
+          <p class="floor-note">The five things that keep the house from losing ground. On a bad week
+            — sick kid, work crunch, holidays — do only these and you have not fallen behind.
+            A streak counts any week you hit 70%, not a perfect one.</p>
+          <div class="floor-list">
+            ${FLOOR.map((f) => {
+              const d = floorDone(f);
+              return `<div class="row ${d ? "done" : ""}" data-floor="${f.id}">
+                <button class="check" aria-pressed="${d}" data-act="floor" aria-label="Mark ${esc(f.title)} done">✓</button>
+                <div class="row-body">
+                  <div class="row-title">${esc(f.title)}</div>
+                  <div class="row-sub">${esc(f.detail)}</div>
+                </div>
+                <div class="row-side"><span class="pill">${f.per === "day" ? "daily" : "weekly"}</span></div>
+              </div>`;
+            }).join("")}
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="h-row">
+          <h2>Today's board</h2>
+          <span class="meta">${due.length} due · zone of the week: ${esc(zone.name)}</span>
+        </div>
+        <div class="people">
+          ${state.people.map((p) => `
+            <div class="person">
+              <div class="av" style="background:${esc(p.color)}">${esc(p.short)}</div>
+              <div style="min-width:0">
+                <div class="nm">${esc(p.name)}</div>
+                <div class="ct">${perPerson[p.id] ? `${perPerson[p.id]} min queued` : "clear"}</div>
+              </div>
+            </div>`).join("")}
+        </div>
+      </div>
+
+      <div class="section">
+        ${due.length
+          ? `<div class="floor-list">${due.map((t) => taskRow(t)).join("")}</div>`
+          : `<div class="panel empty">Nothing due. The rhythm is holding — go do a Mission block instead.</div>`}
+      </div>
+
+      <div class="section">
+        <div class="note"><b>Zone this week: ${esc(zone.name)}.</b> ${esc(zone.note)}
+          Six zones on a six-week loop — one deep pass a week and the whole house gets real
+          attention every month and a half, without anyone ever facing a whole-house clean.</div>
+      </div>`;
+  }
+
+  /* ---------- RHYTHM ---------- */
+  function viewRhythm() {
+    const groups = [
+      { k: "Daily and near-daily", f: (t) => t.cadence <= 3 },
+      { k: "Weekly", f: (t) => t.cadence > 3 && t.cadence <= 10 },
+      { k: "Every few weeks", f: (t) => t.cadence > 10 && t.cadence <= 60 },
+      { k: "Seasonal and annual", f: (t) => t.cadence > 60 },
+    ];
+    return `
+      <div class="section">
+        <div class="h-row"><h2>The Rhythm</h2>
+          <span class="meta">${RHYTHM.length} recurring jobs · ${RHYTHM.filter(isDue).length} due now</span></div>
+        <p class="lede">Everything that keeps the house steady, forever. Due dates roll forward from
+          the last time a job was actually done — miss a week and it slides, it never turns into a
+          backlog of red. Tap any row to see why it earns its place.</p>
+      </div>
+      ${groups.map((g) => {
+        const list = RHYTHM.filter(g.f);
+        if (!list.length) return "";
+        return `<div class="section">
+          <div class="eyebrow">${esc(g.k)}</div>
+          <div class="floor-list">${list.map((t) => taskRow(t)).join("")}</div>
+        </div>`;
+      }).join("")}
+      <div class="section">
+        <div class="eyebrow">Zone rotation</div>
+        <div class="panel scroll-x"><table class="grid">
+          <thead><tr><th>Week</th><th>Zone</th><th>Floor</th><th>What makes it different</th></tr></thead>
+          <tbody>${ZONES.map((z, n) => {
+            const cur = currentZone().id === z.id;
+            return `<tr${cur ? ' style="background:var(--teal-soft)"' : ""}>
+              <td class="num">${n + 1}${cur ? " ←" : ""}</td>
+              <td><b>${esc(z.name)}</b></td><td class="num">${z.floor}</td>
+              <td style="color:var(--ink-2)">${esc(z.note)}</td></tr>`;
+          }).join("")}</tbody>
+        </table></div>
+      </div>`;
+  }
+
+  /* ---------- MISSION ---------- */
+  function viewMission() {
+    const s = missionStats(), d = daysToList();
+    return `
+      <div class="section">
+        <div class="h-row"><h2>The Mission</h2>
+          <span class="meta">target listing ${esc(state.settings.listTarget)}</span></div>
+        <p class="lede">The finite clock. ${PROJECTS.length} projects across five phases, ordered so that
+          things needing lead time start early and things that decay happen last.</p>
+      </div>
+
+      <div class="section">
+        <div class="stats">
+          <div class="stat"><div class="k">Days to list</div><div class="v">${d}</div>
+            <div class="n">${Math.floor(d / 7)} weekends left</div></div>
+          <div class="stat"><div class="k">Projects done</div><div class="v">${s.done}<span style="color:var(--ink-3);font-size:15px">/${s.total}</span></div>
+            <div class="n">${s.left} remaining</div></div>
+          <div class="stat"><div class="k">Spent</div><div class="v">${fmtMoney(s.spent)}</div>
+            <div class="n">of ${fmtMoney(s.budget)} planned</div></div>
+          <div class="stat"><div class="k">Est. value added</div><div class="v" style="color:var(--good)">${fmtMoney(s.value)}</div>
+            <div class="n">directional, not a promise</div></div>
+          <div class="stat"><div class="k">Work left</div><div class="v">${s.hrs}<span style="color:var(--ink-3);font-size:15px">h</span></div>
+            <div class="n">≈ ${Math.ceil(s.hrs / 3)} three-hour blocks</div></div>
+        </div>
+        <div style="margin-top:10px" class="bar amber"><i style="width:${Math.round((s.done / s.total) * 100)}%"></i></div>
+      </div>
+
+      ${(() => {
+        /* The most useful thing this screen can tell you is whether the plan
+           fits in the time you actually have. Most project lists don't, and
+           people find out in month ten. */
+        const wks = Math.max(1, Math.floor(d / 7));
+        const need = s.hrs / wks;
+        const tight = need > 6, ok = need <= 3.5;
+        return `<div class="section">
+          <div class="note" style="border-left-color:var(--${tight ? "risk" : ok ? "good" : "warn"})">
+            <b>Capacity check: ${need.toFixed(1)} hours a week for ${wks} weeks.</b>
+            ${ok
+              ? "That fits inside a single protected Saturday block. This plan is realistic — hold the weekly block and you'll land it."
+              : tight
+              ? `That's roughly ${Math.ceil(need / 3)} three-hour blocks every week, on top of running the house with five people in it. This list as written does not fit. Before it becomes a month-ten crisis, do one of three things: push the listing date, hire out the biggest hour-sinks (interior paint is 60 hours and painters are cheap relative to that), or cut the optional Phase 3 items — the stone veneer and path lighting are the two most cuttable things on the list.`
+              : "That's about one solid weekend block a week, which is achievable but leaves no slack. Protect the block, and hire out interior paint if the schedule slips."}
+          </div>
+        </div>`;
+      })()}
+
+      <div class="section">
+        <div class="note"><b>Read the ROI numbers as a ranking, not a promise.</b> They come from
+          national cost-versus-value style reporting, they move year to year and market to market,
+          and the same reports note that sellers often recoup well under what the averages suggest.
+          What reliably works on a twelve-month clock is condition and presentation, not renovation.
+          A useful guardrail: no single project should exceed about 30% of the home's value.</div>
+      </div>
+
+      ${PHASES.map((ph, pi) => {
+        const list = PROJECTS.filter((p) => p.ph === ph.id);
+        const done = list.filter((p) => ps(p.id).status === "done").length;
+        return `
+        <div class="phase ${ph.hue}">
+          <div class="spine"><div class="num">${ph.n}</div>${pi < PHASES.length - 1 ? '<div class="line"></div>' : ""}</div>
+          <div class="phase-body">
+            <div class="phase-head">
+              <h3>${esc(ph.name)}</h3>
+              <span class="win">${esc(ph.window)}</span>
+              <span class="pill ${done === list.length ? "ok" : ""}" style="margin-left:auto">${done}/${list.length}</span>
+            </div>
+            <p class="phase-thesis">${esc(ph.thesis)}</p>
+            <div class="proj-list">
+              ${list.map((p) => {
+                const st = ps(p.id), isDone = st.status === "done";
+                const cost = st.cost != null ? st.cost : p.cost;
+                return `<div class="proj ${isDone ? "done" : ""}" data-proj="${p.id}">
+                  <button class="check" aria-pressed="${isDone}" data-act="proj" aria-label="Mark ${esc(p.title)} done">✓</button>
+                  <div class="proj-main">
+                    <div class="proj-title">${esc(p.title)}
+                      ${p.decays ? '<span class="pill due" style="margin-left:6px">do last</span>' : ""}
+                      ${p.lead ? `<span class="pill mission" style="margin-left:6px">${p.lead}wk lead</span>` : ""}</div>
+                    <div class="proj-why ${expanded[p.id] ? "show" : ""}" data-act="why">${esc(p.why)}</div>
+                    ${p.roi ? `<div class="proj-roi">${esc(p.roi)}</div>` : ""}
+                  </div>
+                  <div class="proj-nums">
+                    <div class="c">${cost ? fmtMoney(cost) : "free"}</div>
+                    <div class="h">${p.hrs}h</div>
+                  </div>
+                </div>`;
+              }).join("")}
+            </div>
+          </div>
+        </div>`;
+      }).join("")}`;
+  }
+
+  /* ---------- CATS ---------- */
+  function viewCats() {
+    const catTasks = RHYTHM.filter((t) => t.tag === "cats");
+    return `
+      <div class="section">
+        <div class="h-row"><h2>Three Cats, Two Floors</h2><span class="meta">layered defense</span></div>
+        <p class="lede">Six layers, ordered by leverage. The top of the list is worth more than the
+          bottom: hair you catch on a brush never has to be cleaned off anything. And the last layer
+          is the one that decides your sale — for a household with pets, odor is the single biggest
+          deal-killer buyers report.</p>
+      </div>
+      <div class="section layers">
+        ${CAT_PLAN.map((c, n) => `
+          <div class="layer">
+            <div class="lh">
+              <span class="lnum">${esc(c.layer.split(".")[0].padStart(2, "0"))}</span>
+              <h4>${esc(c.title)}</h4>
+              <span class="win">${esc(c.win)}</span>
+            </div>
+            <p>${esc(c.detail)}</p>
+          </div>`).join("")}
+      </div>
+      <div class="section">
+        <div class="eyebrow">The recurring jobs this creates</div>
+        <div class="floor-list">${catTasks.map((t) => taskRow(t)).join("")}</div>
+      </div>
+      <div class="section">
+        <div class="note"><b>One warning that matters more than everything above.</b> You cannot smell
+          your own house. Nose-blindness is real and total, and it is why sellers get blindsided.
+          Before you list, have someone who owns no animals walk through and tell you the truth.
+          And never mask: a buyer who smells air freshener assumes something is being hidden, which
+          costs you more than the original smell would have.</div>
+      </div>`;
+  }
+
+  /* ---------- FLIES ---------- */
+  function viewFlies() {
+    const flyTasks = RHYTHM.filter((t) => t.tag === "flies");
+    return `
+      <div class="section">
+        <div class="h-row"><h2>The Fly Campaign</h2><span class="meta">horse property next door</span></div>
+        <p class="lede">The hard constraint first: the manure is not on your land. Source control is by
+          far the biggest lever in fly management, and you do not own it. So the strategy is
+          interception, exclusion, and one genuinely worthwhile conversation with a neighbor.</p>
+      </div>
+      <div class="section layers">
+        ${FLY_PLAN.map((f) => `
+          <div class="layer flies ${f.key ? "key" : ""}">
+            <div class="lh">
+              <span class="lnum">${esc(f.when)}</span>
+              <h4>${esc(f.title)}</h4>
+              ${f.key ? '<span class="win">highest leverage</span>' : ""}
+            </div>
+            <p>${esc(f.detail)}</p>
+          </div>`).join("")}
+      </div>
+      <div class="section">
+        <div class="eyebrow">The recurring jobs this creates</div>
+        <div class="floor-list">${flyTasks.map((t) => taskRow(t)).join("")}</div>
+      </div>`;
+  }
+
+  /* ---------- SMART ---------- */
+  function viewSmart() {
+    const tiers = [...new Set(SMART.map((s) => s.tier))];
+    return `
+      <div class="section">
+        <div class="h-row"><h2>Homemade Smart Home</h2><span class="meta">local, cheap, and portable</span></div>
+        <p class="lede">Every item here is chosen against a problem you actually have, and every item
+          unplugs and moves with you. Nothing hardwired, nothing on a subscription, nothing that
+          becomes a fixture you leave behind.</p>
+      </div>
+      <div class="section">
+        <div class="note"><b>Be honest about what this does and doesn't do.</b> Smart home gear rarely
+          shows up in an appraisal — do not expect it to raise your sale price. Its value here is
+          different and better: it automates the maintenance system so it survives a busy week, it
+          prevents the disasters that would wreck your sale year, and it makes your life easier
+          right now. Then it comes with you.</div>
+      </div>
+      ${tiers.map((tier) => `
+        <div class="section">
+          <div class="eyebrow">${esc(tier)}</div>
+          <div class="smart-grid">
+            ${SMART.filter((s) => s.tier === tier).map((s) => `
+              <div class="gadget">
+                <div class="gh"><h4>${esc(s.title)}</h4><span class="cost">${esc(s.cost)}</span></div>
+                <div class="solves">${esc(s.solves)}</div>
+                <p>${esc(s.detail)}</p>
+                <div class="gf">
+                  <span class="pill">build effort</span>
+                  <span class="diff">${[1, 2, 3].map((n) => `<i class="${n <= s.diff ? "on" : ""}"></i>`).join("")}</span>
+                </div>
+              </div>`).join("")}
+          </div>
+        </div>`).join("")}
+      <div class="section">
+        <div class="eyebrow">Suggested build order</div>
+        <div class="panel scroll-x"><table class="grid">
+          <thead><tr><th>Order</th><th>Build</th><th class="num">Cost</th><th>Why this one next</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td><b>Leak sensors</b></td><td class="num">$90</td><td style="color:var(--ink-2)">Do this before anything else. Pure downside protection during the sale year, and it needs no hub.</td></tr>
+            <tr><td class="num">2</td><td><b>Robot vacuums ×2</b></td><td class="num">$250–600</td><td style="color:var(--ink-2)">The single biggest daily quality-of-life change in the house.</td></tr>
+            <tr><td class="num">3</td><td><b>Home Assistant + Zigbee stick</b></td><td class="num">$130–210</td><td style="color:var(--ink-2)">The hub everything else plugs into. A weekend to set up.</td></tr>
+            <tr><td class="num">4</td><td><b>Wall tablet</b></td><td class="num">$80–150</td><td style="color:var(--ink-2)">Makes the system visible to five people instead of one. This is the piece that makes it stick.</td></tr>
+            <tr><td class="num">5</td><td><b>Door + leak + litter sensors</b></td><td class="num">$100</td><td style="color:var(--ink-2)">Cheap Zigbee battery sensors, now that the hub exists.</td></tr>
+            <tr><td class="num">6</td><td><b>ESPHome air quality sensor</b></td><td class="num">$35</td><td style="color:var(--ink-2)">The fun one. Save it for when the boring wins are already banked.</td></tr>
+          </tbody>
+        </table></div>
+      </div>`;
+  }
+
+  /* ---------- HUDDLE ---------- */
+  function viewHuddle() {
+    const z = currentZone(), s = missionStats(), sc = weekScore(weekId(today()));
+    const nextZone = ZONES[(ZONES.indexOf(z) + 1) % ZONES.length];
+    return `
+      <div class="section">
+        <div class="h-row"><h2>The Sunday Huddle</h2><span class="meta">20 minutes · the keystone habit</span></div>
+        <p class="lede">If you keep exactly one thing from this entire app, keep this. Twenty minutes,
+          same time every week, anchored to a meal you already eat together. Habits stick when they
+          are attached to something that already reliably happens — the anchor does the work that
+          willpower otherwise has to.</p>
+      </div>
+      <div class="section panel panel-pad">
+        <div class="huddle-step"><div class="t">0–3 min</div><div>
+          <h4>Read the Floor out loud</h4>
+          <p>Week just ended: <b>${Math.round(sc * 100)}%</b>. Say the number, don't editorialize. Nobody
+            gets a lecture. The number is information, not a verdict.</p></div></div>
+        <div class="huddle-step"><div class="t">3–7 min</div><div>
+          <h4>Name what broke</h4>
+          <p>One question only: what got in the way? If the same job fails three weeks running, the job
+            is wrong, not the person. Cut it, shrink it, or move it to someone else.</p></div></div>
+        <div class="huddle-step"><div class="t">7–10 min</div><div>
+          <h4>Flip the zone</h4>
+          <p>This week was <b>${esc(z.name)}</b>. Next up: <b>${esc(nextZone.name)}</b>. One deep pass, one
+            zone, everything else stays on light duty.</p></div></div>
+        <div class="huddle-step"><div class="t">10–16 min</div><div>
+          <h4>Claim the Mission block</h4>
+          <p>${s.left} projects left, roughly ${Math.ceil(s.hrs / 3)} three-hour blocks of work, and
+            ${Math.floor(daysToList() / 7)} weeks until listing. Pick <em>one</em> project for this
+            week's block and say out loud who is doing it and when. One is enough. One a week finishes
+            this list.</p></div></div>
+        <div class="huddle-step"><div class="t">16–20 min</div><div>
+          <h4>Pay out and stop</h4>
+          <p>Whatever the allowance or reward structure is, settle it here, in public, on time. Then
+            close the app. A huddle that runs long stops happening — protect the twenty minutes by
+            ending at twenty minutes.</p></div></div>
+      </div>
+      <div class="section">
+        <div class="eyebrow">Why systems like this usually fail</div>
+        <div class="layers">
+          <div class="layer"><div class="lh"><h4>The setup cliff</h4></div>
+            <p>A perfect chore chart gets built on a Saturday and dies in three weeks, because the
+              effort all landed up front. This one ships filled in — nothing to configure before it
+              starts working.</p></div>
+          <div class="layer"><div class="lh"><h4>The manager trap</h4></div>
+            <p>One parent becomes the assigner, and assigning is more work than doing. Resentment
+              follows, then collapse. Here the rotation is computed and visible to everyone: the app
+              assigns, so no person has to.</p></div>
+          <div class="layer"><div class="lh"><h4>All-or-nothing collapse</h4></div>
+            <p>Miss three days, everything turns red, abandon the whole thing. That's why due dates roll
+              instead of accumulating, and why a streak survives at 70%. Design for your worst week,
+              not your best — you will have both.</p></div>
+          <div class="layer"><div class="lh"><h4>No visible win</h4></div>
+            <p>Nothing ever tells you it's working. So: weeks held, projects closed, value added,
+              blocks remaining. Progress you can point at during the huddle.</p></div>
+        </div>
+      </div>`;
+  }
+
+  /* ---------- SETTINGS ---------- */
+  function viewSetup() {
+    return `
+      <div class="section">
+        <div class="h-row"><h2>Household</h2>
+          <span class="meta">${store && store.kind === "shared" ? "syncing across devices" : "saved on this device"}</span></div>
+        <p class="lede">Put real names in. A chore board with "Kid 2" on it does not survive contact
+          with an actual kid.</p>
+      </div>
+      <div class="section panel panel-pad">
+        <div style="display:grid;gap:12px">
+          ${state.people.map((p, i) => `
+            <div style="display:flex;gap:10px;align-items:center">
+              <div class="av" style="flex:none;width:34px;height:34px;border-radius:50%;background:${esc(p.color)};color:#fff;display:grid;place-items:center;font-family:var(--f-mono);font-size:12px;font-weight:600">${esc(p.short)}</div>
+              <input data-person="${i}" data-k="name" value="${esc(p.name)}" placeholder="Name"
+                style="flex:1;min-width:0;font:inherit;padding:8px 10px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+              <input data-person="${i}" data-k="short" value="${esc(p.short)}" maxlength="3" placeholder="ID"
+                style="width:64px;font-family:var(--f-mono);font-size:13px;padding:8px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:center">
+              <select data-person="${i}" data-k="tier"
+                style="font:inherit;font-size:13px;padding:8px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+                <option value="1"${p.tier === 1 ? " selected" : ""}>Little kid</option>
+                <option value="2"${p.tier === 2 ? " selected" : ""}>Big kid</option>
+                <option value="3"${p.tier === 3 ? " selected" : ""}>Grown-up</option>
+              </select>
+            </div>`).join("")}
+        </div>
+      </div>
+      <div class="section">
+        <div class="eyebrow">The clock</div>
+        <div class="panel panel-pad" style="display:flex;gap:16px;flex-wrap:wrap">
+          <div class="field"><label>Target listing date</label>
+            <input type="date" id="set-target" value="${esc(state.settings.listTarget)}"></div>
+          <div class="field"><label>Zone rotation started</label>
+            <input type="date" id="set-zone" value="${esc(state.settings.zoneStart)}"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="eyebrow">Your data</div>
+        <div class="panel panel-pad">
+          <p style="font-size:13px;color:var(--ink-2);margin-bottom:12px;max-width:70ch">
+            ${store && store.kind === "shared"
+              ? "This board is shared: everyone who opens the link sees the same state, live. Checking something off on the kitchen tablet updates every phone in the house."
+              : "This board is stored in this browser only. Export a backup before clearing site data, or open it as a published link to sync across the whole family."}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="btn-export">Export backup</button>
+            <button class="btn" id="btn-import">Import backup</button>
+            <button class="btn" id="btn-reset">Reset all progress</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ===================== chrome ===================== */
+  const TABS = [
+    { id: "today",   label: "Today",   fn: viewToday },
+    { id: "rhythm",  label: "Rhythm",  fn: viewRhythm },
+    { id: "mission", label: "Mission", fn: viewMission },
+    { id: "cats",    label: "Cats",    fn: viewCats },
+    { id: "flies",   label: "Flies",   fn: viewFlies },
+    { id: "smart",   label: "Smart",   fn: viewSmart },
+    { id: "huddle",  label: "Huddle",  fn: viewHuddle },
+    { id: "setup",   label: "Setup",   fn: viewSetup },
+  ];
+
+  function render() {
+    const dueN = RHYTHM.filter(isDue).length;
+    const d = daysToList();
+    document.getElementById("tabs").innerHTML =
+      `<div class="tabs-in">${TABS.map((t) => `
+        <button class="tab" role="tab" aria-selected="${view === t.id}" data-tab="${t.id}">${t.label}${
+          t.id === "today" && dueN ? `<span class="dot">${dueN}</span>` : ""
+        }</button>`).join("")}</div>`;
+    document.getElementById("countdown").innerHTML =
+      `<b>${d}</b> days to list`;
+    document.getElementById("sync").className = "sync" + (store && store.kind === "shared" ? " live" : "");
+    document.getElementById("sync").textContent = store && store.kind === "shared" ? "shared" : "this device";
+    const main = document.getElementById("main");
+    main.innerHTML = (TABS.find((t) => t.id === view) || TABS[0]).fn();
+    main.scrollTop = 0;
+  }
+
+  /* ===================== events ===================== */
+  document.addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-tab]");
+    if (tab) { view = tab.dataset.tab; render(); window.scrollTo(0, 0); return; }
+
+    const act = e.target.closest("[data-act]");
+    if (!act) return;
+    const kind = act.dataset.act;
+
+    /* --- recurring task --- */
+    const rowEl = act.closest("[data-task]");
+    if (rowEl) {
+      const t = RHYTHM.find((x) => x.id === rowEl.dataset.task);
+      if (!t) return;
+      if (kind === "toggle") {
+        const st = ts(t.id);
+        if (taskStatus(t).code === "ok") { st.lastDone = st.prevDone || null; }
+        else {
+          st.prevDone = st.lastDone || null;
+          st.lastDone = today();
+          logDone(t.id, (assignedTo(t) || {}).id);
+        }
+        save(); render(); return;
+      }
+      if (kind === "cycle") {
+        const pool = eligible(t), cur = assignedTo(t);
+        const idx = pool.findIndex((p) => p.id === (cur || {}).id);
+        ts(t.id).assignee = pool[(idx + 1) % pool.length].id;
+        save(["tasks"]); render(); return;
+      }
+      if (kind === "why") { expanded[t.id] = !expanded[t.id]; render(); return; }
+    }
+
+    /* --- floor item --- */
+    const fEl = act.closest("[data-floor]");
+    if (fEl && kind === "floor") {
+      const f = FLOOR.find((x) => x.id === fEl.dataset.floor);
+      if (!f) return;
+      if (floorDone(f)) {
+        const period = f.per === "day" ? today() : weekId(today());
+        state.log = state.log.filter((en) =>
+          !(en.t === f.id && (f.per === "day" ? en.d === period : weekId(en.d) === period)));
+      } else logDone(f.id, null);
+      save(["log"]); render(); return;
+    }
+
+    /* --- mission project --- */
+    const pEl = act.closest("[data-proj]");
+    if (pEl) {
+      const p = PROJECTS.find((x) => x.id === pEl.dataset.proj);
+      if (!p) return;
+      if (kind === "proj") {
+        const st = ps(p.id);
+        st.status = st.status === "done" ? "todo" : "done";
+        if (st.status === "done") st.doneOn = today();
+        save(["projects"]); render(); return;
+      }
+      if (kind === "why") { expanded[p.id] = !expanded[p.id]; render(); return; }
+    }
+  });
+
+  document.addEventListener("change", (e) => {
+    const t = e.target;
+    if (t.dataset && t.dataset.person != null) {
+      const p = state.people[+t.dataset.person];
+      if (!p) return;
+      p[t.dataset.k] = t.dataset.k === "tier" ? +t.value : t.value;
+      save(["people"]);
+      if (t.dataset.k !== "name") render();
+      return;
+    }
+    if (t.id === "set-target") { state.settings.listTarget = t.value; save(["settings"]); render(); }
+    if (t.id === "set-zone")   { state.settings.zoneStart = weekId(t.value); save(["settings"]); render(); }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (e.target.id === "btn-export") {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `mission-control-${today()}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+    if (e.target.id === "btn-import") {
+      const inp = document.createElement("input");
+      inp.type = "file"; inp.accept = "application/json";
+      inp.onchange = () => {
+        const f = inp.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          try {
+            state = Object.assign(BLANK(), JSON.parse(r.result));
+            save(); render();
+          } catch (err) { alert("That file isn't a Mission Control backup."); }
+        };
+        r.readAsText(f);
+      };
+      inp.click();
+    }
+    if (e.target.id === "btn-reset") {
+      if (confirm("Clear all check-offs, project status and history? Names and dates are kept.")) {
+        const keep = { settings: state.settings, people: state.people };
+        state = Object.assign(BLANK(), keep);
+        save(); render();
+      }
+    }
+    if (e.target.id === "btn-theme") {
+      const cur = document.documentElement.getAttribute("data-theme");
+      const next = cur === "dark" ? "light" : cur === "light" ? "" : "dark";
+      if (next) document.documentElement.setAttribute("data-theme", next);
+      else document.documentElement.removeAttribute("data-theme");
+      try { localStorage.setItem("mc-theme", next); } catch (err) {}
+    }
+  });
+
+  /* ===================== boot ===================== */
+  try {
+    const th = localStorage.getItem("mc-theme");
+    if (th) document.documentElement.setAttribute("data-theme", th);
+  } catch (e) {}
+
+  function seedSchedule() {
+    /* A fresh install with no history would mark all 38 jobs due at once — the
+       exact wall of red this whole design exists to avoid. So on first run each
+       job is placed at a deterministic point inside its own cycle (golden-ratio
+       spread, so it's even and reproducible rather than random). Week one then
+       looks like an ordinary week instead of an emergency. */
+    if (Object.keys(state.tasks).length) return;
+    RHYTHM.forEach((t, i) => {
+      // Daily and near-daily jobs are due immediately — that IS the normal state,
+      // and a Today board with nothing on it teaches people to stop opening it.
+      // Everything slower gets placed at its own point in its cycle so the long
+      // jobs arrive a few at a time instead of all in week one.
+      const frac = (i * 0.6180339887) % 1;
+      const offset = t.cadence <= 3 ? t.cadence : Math.round(t.cadence * frac);
+      state.tasks[t.id] = { lastDone: addDays(today(), -offset), prevDone: null };
+    });
+  }
+
+  (async function boot() {
+    store = LocalStore;
+    await LocalStore.init();
+    seedSchedule();
+    render();
+
+    /* Shared sync lights up if the viewer can run it; the page is fully
+       usable either way, so nothing above waits on this. */
+    if (window.claude && typeof window.claude.use === "function") {
+      try {
+        const db = await window.claude.use("db");
+        if (db) {
+          const shared = DbStore(db);
+          await shared.init();
+          store = shared;
+          shared.watch();
+          render();
+        }
+      } catch (e) { /* stay local */ }
+    }
+  })();
+})();
+
+</script>
+
+</body>
+</html>
